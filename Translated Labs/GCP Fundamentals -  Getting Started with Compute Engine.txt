@@ -1,0 +1,57 @@
+Task 1: Sign in to the Google Cloud Platform (GCP) Console
+	- Sign into gcloud using gcloud SDK
+		gcloud init
+
+Task 2: Create a virtual machine using the GCP Console
+	- Create the instance on the default network
+		gcloud compute instances create my-vm-1 --image=debian-9-stretch-v20200902 --tags=http-server 
+		--subnet=default --zone=us-central1-a
+
+	- Create a firewall rule that allows HTTP traffic on tag 'http-server'
+		gcloud compute firewall-rules create default-allow-http 
+		--direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:80 
+		--source-ranges=0.0.0.0/0 --target-tags=http-server
+
+Task 3: Create a virtual machine using the gcloud command line
+	- To display a list of all the zones in the region to which Qwiklabs assigned in the region us-central1
+		gcloud compute zones list | grep us-central1
+
+	- To set the default zone to the one Qwiklabs indicates
+		gcloud config set compute/zone us-central1-a
+
+	- To create a VM instance called my-vm-2 in the assigned zone
+		gcloud compute instances create "my-vm-2" --machine-type "n1-standard-1" 
+		--image-project "debian-cloud" --image "debian-9-stretch-v20190213" 
+		--subnet "default"
+	
+Task 4: Connect between VM instances
+	- To SSH into my-vm-2
+		gcloud compute ssh my-vm-2
+
+	- To ping my-vm-1
+		ping my-vm-1
+		Ctrl-C to stop.
+		exit to return main shell
+
+	- To ssh into my-vm-1
+		gcloud compute ssh my-vm-1
+
+	- To install the Nginx web server
+		sudo apt-get install nginx-light -y
+
+	- Use the nano text editor to add a custom message to the home page of the web server
+		sudo nano /var/www/html/index.nginx-debian.html
+
+	- To confirm that the web server is serving your new page
+		curl http://localhost/
+
+	- To ssh into my-vm-2
+		exit
+		gcloud compute ssh my-vm-2
+
+	- To access my-vm-1 IP address
+		gcloud compute instances describe my-vm-1
+		Highlight and copy IP address under natIP.
+
+	- To read page at my-vm-1 IP address.
+		curl http://[my-vm-1 IP address]

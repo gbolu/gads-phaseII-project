@@ -1,0 +1,88 @@
+Task 1: Sign in to the Google Cloud Platform (GCP) Console
+	- Sign into gcloud using gcloud SDK
+		gcloud init
+
+Task 2: Deploy a web server VM instance
+	- Create the instance on the default network
+		gcloud compute instances create bloghost --image=debian-9-stretch-v20200902 --tags=http-server 
+		--subnet=default --zone=us-central1-a --metadata=startup-script=apt-get\ update$'\n'
+		apt-get\ install\ apache2\ php\ php-mysql\ -y$'\n'service\ apache2\ restart
+
+	- Create a firewall rule that allows HTTP traffic on tag 'http-server'
+		gcloud compute firewall-rules create default-allow-http 
+		--direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:80 
+		--source-ranges=0.0.0.0/0 --target-tags=http-server
+	
+	- To view the bloghost VM instance's internal and external IP addresses
+		gcloud compute instances list
+
+	- To store the bloghost VM instance's internal and external IP addresses
+		export BLOG_internal_ip=[bloghost INTERNAL_IP]
+		export BLOG_external_ip=[bloghost EXTERNAL_IP]
+
+Task 3: Create a Cloud Storage bucket using the gsutil command line
+	- To enter the chosen location into an environment variable called LOCATION
+		export LOCATION=US
+
+	- To make a bucket named after project ID
+		gsutil mb -l $LOCATION gs://$DEVSHELL_PROJECT_ID
+
+	- To retrieve a banner image from a publicly accessible Cloud Storage location
+		gsutil cp gs://cloud-training/gcpfci/my-excellent-blog.png my-excellent-blog.png
+
+	- To copy the banner image to your newly created Cloud Storage bucket
+		gsutil cp my-excellent-blog.png gs://$DEVSHELL_PROJECT_ID/my-excellent-blog.png
+
+	- To modify the Access Control List of the object just created so that it is readable by everyone
+		gsutil acl ch -u allUsers:R gs://$DEVSHELL_PROJECT_ID/my-excellent-blog.png
+	
+Task 4: Create the Cloud SQL instance
+	- To create the cloud sql instance
+		gcloud sql instances create blog-db --zone=us-central1-a
+
+	- To assign a root user a password
+		gcloud sql users set-password root --instance=bloghost --prompt-for-password
+
+	- To view the sql instance, bloghost ip-address
+		gcloud sql instances list
+
+	- To export the sql instance, bloghost 
+		export blod_db_ip=[bloghost PRIMARY ADDRESS]
+
+ 	- To create a user, blogdbuser with password, password
+		gcloud sql users create blogdbuser --instance=blog-db --password=password
+
+	- To add the IPv4 address of bloghost to the blogdb SQL instance
+		gcloud sql instances patch [INSTANCE_NAME] --authorized-networks=[$BLOG_external_ip]/32
+
+Task 5: Configure an application in a Compute Engine instance to use Cloud SQL
+	- To SSH into bloghost
+		gcloud compute ssh bloghost
+
+	- To replace the CLOUDSQLIP and DBPASSWORD with $blod_db_ip and [blogdbuser password]
+		sudo nano /var/www/html/index.php
+	
+	- To save changes and exit nano editor
+		Ctrl + O and Enter - Save
+		Ctrl + X - Exit editor
+
+	- To restart the server
+		sudo service apache2 restart
+
+ 	- To view the index.php address of the web server
+		curl 35.192.208.2/index.php
+	
+Task 6: Configure an application in a Compute Engine instance to use a Cloud Storage object
+	- To edit index.php of apache web server default folder
+		sudo nano /var/www/html/index.php
+
+	- Add '<img src='https://storage.googleapis.com/$DEVSHELL_PROJECT_ID/my-excellent-blog.png'>'
+
+	- To save changes and exit nano editor
+		Ctrl + O and Enter - Save
+		Ctrl + X - Exit editor
+	- To restart the server
+		sudo service apache2 restart
+
+ 	- To view the index.php address of the web server
+		curl 35.192.208.2/index.php
